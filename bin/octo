@@ -187,6 +187,12 @@ case "$1" in
         ENV=$(/usr/bin/octo config:env $BASE)
         RUN_OPTIONS="$RUN_OPTIONS $ENV"
       fi
+      # kill off the old image with the ame name .
+      OLD_ID=$(docker ps --all | grep "$BASE:latest" | awk '{ print $1 }')
+      if [ -n "$OLD_ID" ]; then
+         echo "Removing old container with same name"
+         docker rm "$OLD_ID" > /dev/null
+      fi
       ID=$(launch_container_return_id)
       PORT=$(inspect_to_get_external_port)
       TAGS=$(/usr/bin/octo service:tags $ID)
