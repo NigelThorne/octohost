@@ -180,18 +180,19 @@ case "$1" in
     NUMBER=${3:-1}
     for (( i=1; i <= $NUMBER; i++ ))
     do
+      # kill off the old image with the ame name .
+      OLD_ID=$(docker ps --all | grep "Exited" | grep "\b$BASE\b" | awk '{ print $1 }')
+      if [ -n "$OLD_ID" ]; then
+         echo "Killing old container with same name"
+         docker rm "$OLD_ID" > /dev/null
+      fi
+
       if [ -e "$DOCKERFILE" ]; then
         RUN_OPTIONS=$(/usr/bin/octo config:options "$BASE" "$DOCKERFILE")
       else
         RUN_OPTIONS="-P -d -e CONTAINER_NAME=$BASE"
         ENV=$(/usr/bin/octo config:env $BASE)
         RUN_OPTIONS="$RUN_OPTIONS $ENV"
-      fi
-      # kill off the old image with the ame name .
-      OLD_ID=$(docker ps --all | grep "$BASE:latest" | awk '{ print $1 }')
-      if [ -n "$OLD_ID" ]; then
-         echo "Removing old container with same name"
-         docker rm "$OLD_ID" > /dev/null
       fi
       ID=$(launch_container_return_id)
       PORT=$(inspect_to_get_external_port)

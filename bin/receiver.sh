@@ -18,9 +18,9 @@ fi
 echo "Base: $BASE"
 
 # Find out the old container ID.
-OLD_ID=$(sudo docker ps | grep "$BASE:latest" | cut -d ' ' -f 1)
+OLD_ID=$(sudo docker ps | grep "\b$BASE:latest\b" | cut -d ' ' -f 1)
 
-IMAGE_ID=$(sudo docker images | grep $BASE | awk '{ print $3 }')
+IMAGE_ID=$(sudo docker images | grep "\b$BASE\b" | awk '{ print $3 }')
 
 if [ -e "$DOCKERFILE" ]
 then
@@ -33,6 +33,24 @@ then
   then
     echo "Failed build - exiting."
     exit
+  fi
+  
+  
+  #Kill the old container by ID.  
+  #TODO: Make this dependent on there being a name supplied in options.
+  if [ -n "$OLD_ID" ]
+  then
+    echo "Killing $OLD_ID container."
+    sudo docker kill $OLD_ID
+  else
+    echo "Not killing any containers."
+  fi
+
+  KILLED_ID=$(docker ps --all |grep "Exited" | grep "\b$BASE\b" | awk '{ print $1 }')
+  if [ -n "$KILLED_ID" ]
+  then
+     echo "Removing docker image with the same name"
+     sudo docker rm "$KILLED_ID"
   fi
 
   RUN_OPTIONS=$(/usr/bin/octo config:options $BASE $DOCKERFILE)
@@ -115,7 +133,7 @@ CNAME=/home/git/src/$REPOSITORY/CNAME
 if [ -f $CNAME ]
 then
   # Add a new line at end if it does not exist to ensure the loop gets last line
-  sed -i -e '$a\' $CNAME
+  sed -i -e '$a\\' $CNAME
   while read DOMAIN
   do
     echo "Adding $LINK_PREFIX://$DOMAIN"
