@@ -24,6 +24,16 @@ IMAGE_ID=$(sudo docker images | grep "\b$BASE\b" | awk '{ print $3 }')
 
 if [ -e "$DOCKERFILE" ]
 then
+
+  # Look for a file to touch (to prevent Docker invalidating the cache based on timestamp)
+  TOUCH_FILE=$(grep -i "^# TOUCH " $DOCKERFILE | cut -d ' ' -f 3)
+  TOUCH_PARAMS=$(grep -i "^# TOUCH " $DOCKERFILE | cut -d ' ' -f 4-)
+  if [ -n "$TOUCH_FILE" ]
+  then
+    echo "Touching -d '$TOUCH_PARAMS' $REPO_PATH/$TOUCH_FILE"
+    $(touch -d "$TOUCH_PARAMS" "$REPO_PATH/$TOUCH_FILE")
+  fi
+
   # Look for the exposed port.
   INTERNAL_PORT=$(grep -i "^EXPOSE" $DOCKERFILE | cut -d ' ' -f 2)
   # Build and get the ID.
